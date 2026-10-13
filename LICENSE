@@ -1,0 +1,10 @@
+SPDX-License-Identifier: LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL
+
+projector-preview is licensed under the GNU Lesser General Public License version 2.1 only,
+or version 3 only, or any later version accepted by the membership of KDE e.V., at your
+choice. This is the licence of the plasma-workspace code (libtaskmanager's screencasting.cpp
+and screencastingrequest.cpp, by Aleix Pol Gonzalez) that plugin/ is derived from; the rest
+of the repository uses the same terms so that one licence covers it all.
+
+The licence texts are in LICENSES/ (LGPL-3.0 builds on GPL-3.0, so its text is included
+too). See https://spdx.org/licenses/ for the identifiers.

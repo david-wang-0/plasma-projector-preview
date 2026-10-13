@@ -1,0 +1,12 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "KPlugin": {
+        "Id": "local.projectorpreview",
+        "Name": "Projector preview",
+        "Description": "Live, GPU-scaled mirror of another screen, with the mouse pointer. Run with: projector-preview",
+        "Icon": "video-display",
+        "Category": "System Information",
+        "License": "LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL"
+    }
+}
