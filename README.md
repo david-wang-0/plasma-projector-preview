@@ -1,6 +1,11 @@
-# projector-preview
+# plasma-projector-preview
+
+> **Not a KDE project.** This is an independent, unofficial tool that runs on KDE Plasma. It
+> is not affiliated with, endorsed by or maintained by KDE or KDE e.V.; please don't report
+> its problems to KDE. KDE® and Plasma are trademarks of KDE e.V.
 
 A live, GPU-scaled view of another screen in a small window, for KDE Plasma 6 on Wayland.
+The command it installs is `projector-preview`.
 Made for teaching with a projector: the projector stays a normal **extended** screen (put
 windows on it with Meta+Shift+Arrow or by dragging them across the edge), and a window on
 the laptop shows what the room sees, mouse pointer included.
