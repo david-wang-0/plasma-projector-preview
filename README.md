@@ -94,6 +94,11 @@ session's `PATH` (it is by default on most distributions).
   for `pointer_embedded` (or hidden with `pointer: false`).
 - `PipeWireSourceItem` from `org.kde.pipewire` (kpipewire) shows the stream, importing the
   DMA-BUF frames on the GPU, so scaling is free.
+- When the window is smaller than the mirrored screen, the item is drawn into a layer at the
+  stream's full resolution and sampled through mipmaps (`layer.textureSize: streamSize`,
+  `layer.mipmap: true`). Without that, shrinking samples only some of the pixels, so small
+  text turns jagged and shimmers while resizing. It costs one full-size GPU copy per frame
+  and is off when the window is at native size or larger.
 
 ### The start-up race
 

@@ -40,6 +40,14 @@ PlasmoidItem {
             anchors.fill: parent
             nodeId: cast.nodeId
             visible: nodeId !== 0
+
+            // Shrinking a big screen straight into the window samples only some of its
+            // pixels, so text turns jagged and shimmers. When shrinking, draw into a
+            // full-resolution layer first and sample that through mipmaps (averaged).
+            layer.enabled: streamSize.width > width * Screen.devicePixelRatio
+            layer.textureSize: streamSize
+            layer.mipmap: true
+            layer.smooth: true
         }
 
         Text {
