@@ -46,6 +46,17 @@ ln -s "$PWD/plasmoid" "$HOME/.local/share/plasma/plasmoids/local.projectorprevie
 ln -s "$PWD/bin/projector-preview" "$HOME/.local/bin/projector-preview"
 ```
 
+For an application-menu entry (Kickoff, KRunner, pinnable to the panel, and a global
+shortcut via System Settings → Keyboard → Shortcuts → Add Application), also link the
+desktop file:
+
+```sh
+ln -s "$PWD/projector-preview.desktop" "$HOME/.local/share/applications/projector-preview.desktop"
+```
+
+It runs `projector-preview` from `PATH`, so `$HOME/.local/bin` must be on the Plasma
+session's `PATH` (it is by default on most distributions).
+
 (A dotfiles repo can do the same from its install script, with this repo as a submodule.)
 
 ## How it works

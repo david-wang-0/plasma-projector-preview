@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Projector Preview
+GenericName=Screen mirror
+Comment=Live view of another screen in a window, pointer included
+Exec=projector-preview
+Icon=video-display
+Categories=Utility;Presentation;
+Keywords=projector;mirror;monitor;screen;preview;display;
