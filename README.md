@@ -23,6 +23,13 @@ KDE window, so move and resize it freely; it runs at full frame rate at any size
 the frames stay on the GPU. The view is view-only (clicks do not reach the mirrored
 screen). The mouse pointer is drawn into the picture whenever it is on the mirrored screen.
 
+To zoom, hold Ctrl and scroll over the window (mouse wheel or two-finger touchpad scroll), up
+to 8×; it zooms around the point under the pointer. While zoomed in, the view follows the
+pointer smoothly whenever it is on the mirrored screen, keeping it near the middle (as far as
+the edges of the picture allow); while the pointer is elsewhere, e.g. over the preview window,
+the view stays where it is. Zoom out fully (Ctrl+scroll down) to get the whole screen back;
+switching screens by clicking also resets the zoom. Scrolling without Ctrl does nothing.
+
 From the GUI: once the desktop file is linked (see below), start **Projector Preview** from
 the application launcher or KRunner (Alt+Space, "projector"), pin it to the task manager, or
 give it a global shortcut in System Settings → Keyboard → Shortcuts → Add New → Application.
@@ -32,8 +39,8 @@ Set the projector to *extend*, not *mirror*, in System Settings → Display Conf
 ## Requirements
 
 - KDE Plasma 6 on Wayland (KWin), tested with Plasma 6.7 and Qt 6.11.
-- To build: CMake ≥ 3.21, a C/C++ compiler, Qt 6 (≥ 6.7) development files for Core, Gui,
-  Qml and WaylandClient (`qt6-wayland`), and `plasma-wayland-protocols`.
+- To build: CMake ≥ 3.21, a C/C++ compiler, Qt 6 (≥ 6.7) development files for Core, DBus,
+  Gui, Qml and WaylandClient (`qt6-wayland`), and `plasma-wayland-protocols`.
 - At run time: `plasmawindowed` (from `plasma-workspace`) and the `org.kde.pipewire` QML
   module (from `kpipewire`).
 
@@ -78,7 +85,7 @@ session's `PATH` (it is by default on most distributions).
   protocol only to programs whose desktop file lists it in `X-KDE-Wayland-Interfaces`.
   `plasmawindowed` is one of them, which is why this is a widget and not a standalone QML
   script (`qml6` would be refused).
-- `plugin/` is a small QML module, `local.outputstream`, with one type:
+- `plugin/` is a small QML module, `local.outputstream`, with two types. The first:
 
   ```qml
   OutputStream {
@@ -98,7 +105,25 @@ session's `PATH` (it is by default on most distributions).
   stream's full resolution and sampled through mipmaps (`layer.textureSize: streamSize`,
   `layer.mipmap: true`). Without that, shrinking samples only some of the pixels, so small
   text turns jagged and shimmers while resizing. It costs one full-size GPU copy per frame
-  and is off when the window is at native size or larger.
+  and is off when the picture is shown at native size or larger (window size times zoom).
+- Zooming enlarges the `PipeWireSourceItem` inside a clipping item and moves it. The view is
+  kept as the picture point at the window's centre, eased towards its target every frame
+  (`FrameAnimation`, exponential approach) and clamped so that no empty margin shows.
+- To follow the pointer, the widget needs its global position, which a Wayland client cannot
+  query and which neither KWin's D-Bus API nor kpipewire offers. The plugin's second type,
+  `CursorTracker` (read-only `position` in global logical coordinates, and `valid`), gets it
+  from KWin: it writes a small KWin script to
+  `$XDG_RUNTIME_DIR/plasma-projector-preview/cursor-<pid>.js`, loads it through KWin's
+  `org.kde.kwin.Scripting` D-Bus interface as `plasma-projector-preview-cursor-<pid>` and runs
+  it. The script sends `workspace.cursorPos` on every `workspace.cursorPosChanged` with
+  `callDBus` to the preview's unique bus name, object `/CursorTracker`, method
+  `io.github.david_wang_0.PlasmaProjectorPreview.CursorTracker.setPosition(x, y)`. `callDBus`
+  sends each JS number as an `int32` when it is integral and as a `double` otherwise, so the
+  receiver is a `QDBusVirtualObject` that accepts either. The widget compares the position with
+  the mirrored screen's geometry from `Qt.application.screens`. When the preview exits
+  normally (including on SIGTERM), it unloads the script and deletes the file. A preview killed
+  hard cannot; the next preview to start unloads the scripts and deletes the files of
+  previews that are no longer running.
 
 ### The start-up race
 
@@ -112,9 +137,14 @@ while it has none. The old stream is closed on every change and in the destructo
 ## Checking it still works (after a Plasma or Qt update)
 
 1. With an external screen attached, run `projector-preview`: the picture should appear
-   within a second, with the pointer when it is on that screen.
+   within a second, with the pointer when it is on that screen. Ctrl+scroll over it zooms
+   in, and the zoomed view should then follow the pointer on the external screen.
 2. `pw-dump` should list a `Stream/Input/Video` node of `plasmawindowed` in state `running`.
-3. `WAYLAND_DEBUG=1 timeout 5 projector-preview 2>&1 | grep stream_output` should show
+3. `qdbus6 org.kde.KWin /Scripting org.kde.kwin.Scripting.isScriptLoaded plasma-projector-preview-cursor-<pid>`
+   (the pid of `plasmawindowed`) should print `true`. If KWin's scripting API changes (e.g.
+   `workspace.cursorPos` or `cursorPosChanged` renamed), only following the pointer stops;
+   zooming still works. Script errors show in `journalctl --user -t kwin_wayland`.
+4. `WAYLAND_DEBUG=1 timeout 5 projector-preview 2>&1 | grep stream_output` should show
    `zkde_screencast_unstable_v1#….stream_output(new id …, wl_output#…, 2)`; the last
    argument is the pointer mode (1 hidden, 2 embedded, 4 metadata).
 
@@ -132,13 +162,18 @@ such as `Cannot load library …liboutputstream.so`.
   `import org.kde.taskmanager as TaskManager` and `TaskManager.ScreencastingRequest { id: cast }`,
   plus a `Timer` (300 ms, repeating while `cast.nodeId === 0`) that sets
   `cast.outputName` to `""` and back to the output, to get past the start-up race. That loses
-  the pointer.
+  the pointer. Also remove the `CursorTracker` and its uses in `follow()`; zooming then works
+  without following the pointer.
 
 ## Limitations
 
 - Plasma 6 on Wayland only (KWin's private screencast protocol).
 - View-only; no input goes to the mirrored screen.
 - No screen picker beyond click-to-cycle, and nothing is remembered between runs.
+- If a preview is killed hard (SIGKILL, crash), its KWin script stays loaded, sending
+  pointer positions to a bus name that is gone, until the next preview starts (which unloads
+  it) or the session ends. That is harmless.
+- One `CursorTracker` per process (it owns the object path `/CursorTracker`).
 
 ## Tried first and dropped
 

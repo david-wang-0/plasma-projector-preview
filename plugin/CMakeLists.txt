@@ -10,7 +10,7 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RelWithDebInfo)
 endif()
 
-find_package(Qt6 6.7 REQUIRED COMPONENTS Core Gui Qml WaylandClient)
+find_package(Qt6 6.7 REQUIRED COMPONENTS Core DBus Gui Qml WaylandClient)
 qt_standard_project_setup(REQUIRES 6.7)
 
 # The protocol XML ships with plasma-wayland-protocols.
@@ -35,11 +35,12 @@ qt_add_qml_module(outputstream
     SOURCES
         screencasting.cpp screencasting.h
         outputstream.cpp outputstream.h
+        cursortracker.cpp cursortracker.h
 )
 
 qt6_generate_wayland_protocol_client_sources(outputstream FILES ${SCREENCAST_XML})
 
-target_link_libraries(outputstream PRIVATE Qt6::Core Qt6::Gui Qt6::Qml Qt6::WaylandClient)
+target_link_libraries(outputstream PRIVATE Qt6::Core Qt6::DBus Qt6::Gui Qt6::Qml Qt6::WaylandClient)
 # A QML plugin is dlopen()ed, so a missing symbol would only show up at load time; fail at link time.
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_options(outputstream PRIVATE "LINKER:--no-undefined")
