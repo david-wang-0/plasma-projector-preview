@@ -18,6 +18,10 @@ KDE window, so move and resize it freely; it runs at full frame rate at any size
 the frames stay on the GPU. The view is view-only (clicks do not reach the mirrored
 screen). The mouse pointer is drawn into the picture whenever it is on the mirrored screen.
 
+From the GUI: once the desktop file is linked (see below), start **Projector Preview** from
+the application launcher or KRunner (Alt+Space, "projector"), pin it to the task manager, or
+give it a global shortcut in System Settings → Keyboard → Shortcuts → Add New → Application.
+
 Set the projector to *extend*, not *mirror*, in System Settings → Display Configuration.
 
 ## Requirements
